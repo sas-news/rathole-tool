@@ -147,8 +147,10 @@ ssh -p "${GCP_SSH_PORT}" -i "${GCP_SSH_KEY_PATH}" ${GCP_USER}@${GCP_HOST} <<-EOF
     echo "✅ 設定ファイルを ${SERVER_CONFIG_PATH} へ移動し、権限を設定しました。"
 
     # 1. UFW設定
-    if ! command -v ufw &> /dev/null; then
-        echo '警告: UFWがインストールされていません。インストールを推奨します (sudo apt install ufw)。'
+    # `ufw` コマンドは sudo がないと PATH が通っていない場合があるため、
+    # `sudo ufw status` が成功するかどうかで存在を判断する
+    if ! sudo ufw status &> /dev/null; then
+        echo '警告: UFWがインストールされていないか、sudoで実行できません。インストールを推奨します (sudo apt install ufw)。'
         echo 'UFW設定ステップをスキップします。'
     else
         echo 'UFW: 基本ルール (デフォルト拒否, SSH許可) を設定'
