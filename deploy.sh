@@ -118,6 +118,7 @@ echo "✅ server.toml と client.toml を生成しました。"
 
 # --- 3. 自宅サーバーへの設定ファイル配置 ----------------------------------------------------
 echo "🏠 自宅サーバーに client.toml を配置します..."
+sudo mkdir -p "$(dirname "${CLIENT_CONFIG_PATH}")"
 cat "${CLIENT_TOML_PATH}" | sudo tee "${CLIENT_CONFIG_PATH}" > /dev/null
 sudo chmod 644 "${CLIENT_CONFIG_PATH}"
 echo "✅ client.toml を ${CLIENT_CONFIG_PATH} に配置しました。"
@@ -139,6 +140,7 @@ ssh -p "${GCP_SSH_PORT}" -i "${GCP_SSH_KEY_PATH}" ${GCP_USER}@${GCP_HOST} <<-EOF
     set -eu
     # 0. 設定ファイルを正しい場所へ移動
     echo '設定ファイルを所定の場所へ移動します...'
+    sudo mkdir -p "$(dirname "${SERVER_CONFIG_PATH}")"
     sudo mv "${TMP_REMOTE_PATH}" "${SERVER_CONFIG_PATH}"
     sudo chown root:root "${SERVER_CONFIG_PATH}"
     sudo chmod 644 "${SERVER_CONFIG_PATH}"

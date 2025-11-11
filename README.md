@@ -68,8 +68,8 @@ bash deploy.sh config.yaml
 スクリプトは以下の処理を自動的に行います。
 
 1.  `config.yaml` を読み込み、`server.toml` と `client.toml` を生成します。
-2.  生成した `client.toml` を自宅サーバーの `/opt/rathole/client.toml` に配置します。
-3.  生成した `server.toml` を公開サーバーの `/opt/rathole/server.toml` に転送します。
+2.  生成した `client.toml` を自宅サーバーの `/etc/rathole/client.toml` に配置します。
+3.  生成した `server.toml` を公開サーバーの `/etc/rathole/server.toml` に転送します。
 4.  公開サーバーのファイアウォール (UFW) を設定し、必要なポートを開放します。
 5.  公開サーバーと自宅サーバーの `rathole` サービスを再起動し、新しい設定を適用します。
 
