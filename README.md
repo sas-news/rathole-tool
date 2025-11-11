@@ -8,7 +8,7 @@
 
 | ファイル名                                         | 説明                                                                                                                                                         |
 | :------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`config.yaml`](config.yaml)                       | すべての設定を記述する YAML ファイルです。GCP 接続情報、公開したいサービスなどを定義します。 **基本的にユーザーはこのファイルのみを編集します。**            |
+| [`config_example.yaml`](config_example.yaml)       | すべての設定を記述する YAML ファイルです。GCP 接続情報、公開したいサービスなどを定義します。 **基本的にユーザーはこのファイルのみを編集します。**            |
 | [`deploy.sh`](deploy.sh)                           | `config.yaml` の内容に基づき、`rathole` の設定ファイル (`server.toml`, `client.toml`) を生成し、各サーバーにデプロイしてサービスを再起動するスクリプトです。 |
 | [`rathole-server.service`](rathole-server.service) | 公開サーバー側で `rathole` を systemd サービスとして実行するためのユニットファイルです。                                                                     |
 | [`rathole-client.service`](rathole-client.service) | 自宅サーバー側で `rathole` を systemd サービスとして実行するためのユニットファイルです。                                                                     |
@@ -26,15 +26,15 @@
   - `rathole-server.service` と `rathole-client.service` がそれぞれ `/etc/systemd/system/` に配置され、有効化 (`systemctl enable`) されていること。
 
 ```sh
-wget https://github.com/rathole-org/rathole/releases/download/v0.5.0/rathole-x86_64-unknown-linux-gnu.zip
+wget https://github.com/rathole-org/rathole/releases/download/v<latest_version>/rathole-x86_64-unknown-linux-gnu.zip
 unzip rathole-x86_64-unknown-linux-gnu.zip
-sudo mv rathole /usr/local/bin/rathole
+sudo mv rathole /usr/local/bin/
 sudo chmod +x /usr/local/bin/rathole
 ```
 
 ```sh
-scp rathole-server.service <GCP_USER>@<GCP_HOST>:/etc/systemd/system/rathole-server.service
-ssh <GCP_USER>@<GCP_HOST> 'systemctl enable rathole-server.service; systemctl daemon-reload'
+scp -P 1640 rathole-server.service sasshinbun0655@34.83.213.95:/etc/systemd/system/rathole-server.service
+ssh -p 1640 sasshinbun0655@34.83.213.95 'systemctl enable rathole-server.service; systemctl daemon-reload'
 ```
 
 ```sh

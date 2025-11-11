@@ -29,6 +29,8 @@ trap 'rm -rf -- "$TMP_DIR"' EXIT
 # yq を使って設定値を抽出
 GCP_USER=$(yq e '.connection.gcp_user' "$CONFIG_FILE")
 GCP_HOST=$(yq e '.connection.gcp_host' "$CONFIG_FILE")
+GCP_SSH_PORT=$(yq e '.connection.gcp_ssh_port' "$CONFIG_FILE")
+GCP_SSH_KEY_PATH=$(yq e '.connection.gcp_ssh_key_path' "$CONFIG_FILE")
 RATHOLE_CONFIG_ROOT=$(yq e '.connection.rathole_config_root' "$CONFIG_FILE")
 SYSTEMD_SERVICE_SERVER=$(yq e '.connection.systemd_service_server' "$CONFIG_FILE")
 SYSTEMD_SERVICE_CLIENT=$(yq e '.connection.systemd_service_client' "$CONFIG_FILE")
@@ -44,7 +46,6 @@ CLIENT_CONFIG_PATH="${RATHOLE_CONFIG_ROOT}/client.toml"
 SERVER_CONFIG_PATH="${RATHOLE_CONFIG_ROOT}/server.toml"
 CLIENT_TOML_PATH="${TMP_DIR}/client.toml"
 SERVER_TOML_PATH="${TMP_DIR}/server.toml"
-SSH_PORT=$(yq e '.connection.gcp_ssh_port' "$CONFIG_FILE")
 
 # --- 2. 設定ファイル生成 ---------------------------------------------------------------------
 
@@ -126,15 +127,23 @@ echo "✅ client.toml を ${CLIENT_CONFIG_PATH} に配置しました。"
 
 echo "📤 server.toml を GCPサーバー (${GCP_HOST}) へ転送し、設定を適用します..."
 
-# server.toml をGCPサーバーへ転送
-scp -P "${SSH_PORT}" "${SERVER_TOML_PATH}" ${GCP_USER}@${GCP_HOST}:"${SERVER_CONFIG_PATH}"
+# server.toml をGCPサーバーの一時ディレクトリへ転送
+TMP_REMOTE_PATH="/tmp/server.toml"
+scp -P "${GCP_SSH_PORT}" -i "${GCP_SSH_KEY_PATH}" "${SERVER_TOML_PATH}" ${GCP_USER}@${GCP_HOST}:"${TMP_REMOTE_PATH}"
 
 echo "✅ server.toml の転送が完了しました。"
 echo "🔒 GCPサーバー上の UFW と rathole サービスを設定します..."
 
 # GCPサーバーへSSH接続し、UFW設定とrathole再起動を実行
-ssh -p "${SSH_PORT}" ${GCP_USER}@${GCP_HOST} <<-EOF
+ssh -p "${GCP_SSH_PORT}" -i "${GCP_SSH_KEY_PATH}" ${GCP_USER}@${GCP_HOST} <<-EOF
     set -eu
+    # 0. 設定ファイルを正しい場所へ移動
+    echo '設定ファイルを所定の場所へ移動します...'
+    sudo mv "${TMP_REMOTE_PATH}" "${SERVER_CONFIG_PATH}"
+    sudo chown root:root "${SERVER_CONFIG_PATH}"
+    sudo chmod 644 "${SERVER_CONFIG_PATH}"
+    echo "✅ 設定ファイルを ${SERVER_CONFIG_PATH} へ移動し、権限を設定しました。"
+
     # 1. UFW設定
     if ! command -v ufw &> /dev/null; then
         echo '警告: UFWがインストールされていません。インストールを推奨します (sudo apt install ufw)。'
@@ -143,7 +152,7 @@ ssh -p "${SSH_PORT}" ${GCP_USER}@${GCP_HOST} <<-EOF
         echo 'UFW: 基本ルール (デフォルト拒否, SSH許可) を設定'
         sudo ufw default deny incoming
         sudo ufw default allow outgoing
-        sudo ufw allow ${SSH_PORT}/tcp comment 'Allow SSH'
+        sudo ufw allow ${GCP_SSH_PORT}/tcp comment 'Allow SSH'
 
         echo 'UFW: rathole クライアント接続ポート (${SERVER_BIND_PORT}/tcp) を許可'
         sudo ufw allow ${SERVER_BIND_PORT}/tcp comment 'rathole client listen port'

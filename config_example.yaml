@@ -4,6 +4,7 @@ connection:
   gcp_user: "your_gcp_username"
   gcp_host: "your_gcp_host_ip"
   gcp_ssh_port: 22
+  gcp_ssh_key_path: "/path/to/your/ssh/key"
   rathole_config_root: "/etc/rathole"
   systemd_service_server: "rathole-server.service"
   systemd_service_client: "rathole-client.service"
