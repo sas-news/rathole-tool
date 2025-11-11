@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/rathole /opt/rathole/client.toml
+ExecStart=/usr/local/bin/rathole /etc/rathole/client.toml
 Restart=on-failure
 RestartSec=5s
 

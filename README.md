@@ -33,14 +33,15 @@ sudo chmod +x /usr/local/bin/rathole
 ```
 
 ```sh
-scp -P 1640 rathole-server.service sasshinbun0655@34.83.213.95:/etc/systemd/system/rathole-server.service
-ssh -p 1640 sasshinbun0655@34.83.213.95 'systemctl enable rathole-server.service; systemctl daemon-reload'
+scp -P 1640 rathole-server.service <GCP_USER>@<GCP_HOST>:~
+ssh -p 1640 <GCP_USER>@<GCP_HOST> 'sudo mv ~/rathole-server.service /etc/systemd/system/rathole-server.service'
+ssh -p 1640 <GCP_USER>@<GCP_HOST> 'sudo systemctl enable rathole-server.service; sudo systemctl daemon-reload'
 ```
 
 ```sh
-cp rathole-client.service /etc/systemd/system/rathole-client.service
-systemctl enable rathole-client.service
-systemctl daemon-reload
+sudo cp rathole-client.service /etc/systemd/system/rathole-client.service
+sudo systemctl enable rathole-client.service
+sudo systemctl daemon-reload
 ```
 
 ### 2. 設定ファイルの編集
