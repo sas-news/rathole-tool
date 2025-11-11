@@ -71,7 +71,7 @@ EOF
 
 # サービスごとの設定をループで追加し、UFW許可ポートリストを作成
 UFW_PUBLIC_PORTS=""
-echo "$SERVICES_JSON" | jq -c '.[]' | while read i; do
+while read -r i; do
     SERVICE_NAME_BASE=$(echo "$i" | jq -r '.name')
     LOCAL_ADDR=$(echo "$i" | jq -r '.local_addr')
     PUBLIC_PORT=$(echo "$i" | jq -r '.public_port')
@@ -112,7 +112,7 @@ local_addr = "${LOCAL_ADDR}"
 EOF
 
     done # PROTOCOLS loop
-done
+done < <(echo "$SERVICES_JSON" | jq -c '.[]')
 
 echo "✅ server.toml と client.toml を生成しました。"
 
@@ -137,7 +137,7 @@ echo "🔒 GCPサーバー上の UFW と rathole サービスを設定します.
 
 # GCPサーバーへSSH接続し、UFW設定とrathole再起動を実行
 ssh -p "${GCP_SSH_PORT}" -i "${GCP_SSH_KEY_PATH}" ${GCP_USER}@${GCP_HOST} <<-EOF
-    set -eu
+    set -euo pipefail
     # 0. 設定ファイルを正しい場所へ移動
     echo '設定ファイルを所定の場所へ移動します...'
     sudo mkdir -p "$(dirname "${SERVER_CONFIG_PATH}")"
@@ -160,10 +160,12 @@ ssh -p "${GCP_SSH_PORT}" -i "${GCP_SSH_KEY_PATH}" ${GCP_USER}@${GCP_HOST} <<-EOF
         echo 'UFW: rathole クライアント接続ポート (${SERVER_BIND_PORT}/tcp) を許可'
         sudo ufw allow ${SERVER_BIND_PORT}/tcp comment 'rathole client listen port'
 
-        echo 'UFW: 公開サービスポートを許可 (TCP/UDP)'
+        echo "UFW: 公開サービスポートを許可します: '${UFW_PUBLIC_PORTS}'"
         # 重複するポート:プロトコルの組み合わせをユニークにして処理
         for port_proto in \$(echo '${UFW_PUBLIC_PORTS}' | xargs -n1 | sort -u); do
-            sudo ufw allow \$port_proto comment 'rathole exposed service'
+            if [ -n "\$port_proto" ]; then
+                sudo ufw allow \$port_proto comment 'rathole exposed service'
+            fi
         done
 
         echo 'UFW: 有効化 (既に有効な場合は無視されます)'
