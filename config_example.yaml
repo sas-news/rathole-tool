@@ -1,0 +1,36 @@
+# rathole クライアント/サーバー設定情報
+
+connection:
+  gcp_user: "your_gcp_username"
+  gcp_host: "your_gcp_host_ip"
+  gcp_ssh_port: 22
+  rathole_config_root: "/etc/rathole"
+  systemd_service_server: "rathole-server.service"
+  systemd_service_client: "rathole-client.service"
+
+rathole_global:
+  token: "your_rathole_token"
+  server_bind_port: 2333
+  heartbeat_timeout: 40
+  heartbeat_interval: 30
+
+services:
+  - name: "ssh"
+    protocol: "tcp"
+    local_addr: "127.0.0.1:22"
+    public_port: 22
+
+  - name: "minecraft"
+    protocol: "tcp"
+    local_addr: "127.0.0.1:25565"
+    public_port: 25565
+
+  - name: "example_service"
+    protocol: "udp"
+    local_addr: "127.0.0.1:12345"
+    public_port: 12345
+
+  - name: "another_service"
+    protocol: "tcp/udp"
+    local_addr: "127.0.0.1:12346"
+    public_port: 12346
