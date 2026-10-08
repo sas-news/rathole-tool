@@ -46,7 +46,13 @@ sudo systemctl daemon-reload
 
 ### 2. 設定ファイルの編集
 
-[`config.yaml`](config.yaml) を開き、ご自身の環境に合わせて各項目を編集します。
+`config_example.yaml` を `config.yaml` という名前でコピーします (`config.yaml` は `.gitignore` 対象のため、認証トークンなどをそのまま記述できます)。
+
+```sh
+cp config_example.yaml config.yaml
+```
+
+`config.yaml` を開き、ご自身の環境に合わせて各項目を編集します。
 
 - **`connection`**: 公開サーバー (GCP) のユーザー名やホスト名を設定します。
 - **`rathole_global`**: `rathole` の認証トークンや待ち受けポートを設定します。

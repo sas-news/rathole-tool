@@ -1,5 +1,5 @@
 [Unit]
-Description=rathole client service
+Description=rathole server service
 After=network.target
 
 [Service]

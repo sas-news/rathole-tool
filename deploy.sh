@@ -11,7 +11,7 @@ fi
 
 # --- 1. 変数と関数定義 -----------------------------------------------------------
 
-if [ -z "$1" ]; then
+if [ -z "${1:-}" ]; then
     echo "エラー: 設定ファイル (例: config.yaml) を引数に指定してください。"
     exit 1
 fi
@@ -42,6 +42,10 @@ HEARTBEAT_INTERVAL=$(yq e '.rathole_global.heartbeat_interval' "$CONFIG_FILE")
 
 # サービス配列をJSON形式で抽出
 SERVICES_JSON=$(yq e '.services | to_json' "$CONFIG_FILE")
+if [ -z "$SERVICES_JSON" ] || [ "$SERVICES_JSON" = "null" ] || [ "$SERVICES_JSON" = "[]" ]; then
+    echo "エラー: $CONFIG_FILE の services が空です。少なくとも1つのサービスを定義してください。"
+    exit 1
+fi
 CLIENT_CONFIG_PATH="${RATHOLE_CONFIG_ROOT}/client.toml"
 SERVER_CONFIG_PATH="${RATHOLE_CONFIG_ROOT}/server.toml"
 CLIENT_TOML_PATH="${TMP_DIR}/client.toml"
@@ -120,7 +124,8 @@ echo "✅ server.toml と client.toml を生成しました。"
 echo "🏠 自宅サーバーに client.toml を配置します..."
 sudo mkdir -p "$(dirname "${CLIENT_CONFIG_PATH}")"
 cat "${CLIENT_TOML_PATH}" | sudo tee "${CLIENT_CONFIG_PATH}" > /dev/null
-sudo chmod 644 "${CLIENT_CONFIG_PATH}"
+# default_token を含むため所有者のみ読み書き可能にする
+sudo chmod 600 "${CLIENT_CONFIG_PATH}"
 echo "✅ client.toml を ${CLIENT_CONFIG_PATH} に配置しました。"
 
 
@@ -130,20 +135,21 @@ echo "📤 server.toml を GCPサーバー (${GCP_HOST}) へ転送し、設定�
 
 # server.toml をGCPサーバーの一時ディレクトリへ転送
 TMP_REMOTE_PATH="/tmp/server.toml"
-scp -P "${GCP_SSH_PORT}" -i "${GCP_SSH_KEY_PATH}" "${SERVER_TOML_PATH}" ${GCP_USER}@${GCP_HOST}:"${TMP_REMOTE_PATH}"
+scp -P "${GCP_SSH_PORT}" -i "${GCP_SSH_KEY_PATH}" "${SERVER_TOML_PATH}" "${GCP_USER}@${GCP_HOST}:${TMP_REMOTE_PATH}"
 
 echo "✅ server.toml の転送が完了しました。"
 echo "🔒 GCPサーバー上の UFW と rathole サービスを設定します..."
 
 # GCPサーバーへSSH接続し、UFW設定とrathole再起動を実行
-ssh -p "${GCP_SSH_PORT}" -i "${GCP_SSH_KEY_PATH}" ${GCP_USER}@${GCP_HOST} <<-EOF
+ssh -p "${GCP_SSH_PORT}" -i "${GCP_SSH_KEY_PATH}" "${GCP_USER}@${GCP_HOST}" <<-EOF
     set -euo pipefail
     # 0. 設定ファイルを正しい場所へ移動
     echo '設定ファイルを所定の場所へ移動します...'
     sudo mkdir -p "$(dirname "${SERVER_CONFIG_PATH}")"
     sudo mv "${TMP_REMOTE_PATH}" "${SERVER_CONFIG_PATH}"
     sudo chown root:root "${SERVER_CONFIG_PATH}"
-    sudo chmod 644 "${SERVER_CONFIG_PATH}"
+    # default_token を含むため所有者のみ読み書き可能にする
+    sudo chmod 600 "${SERVER_CONFIG_PATH}"
     echo "✅ 設定ファイルを ${SERVER_CONFIG_PATH} へ移動し、権限を設定しました。"
 
     # 1. UFW設定
@@ -184,4 +190,4 @@ echo "✅ GCPサーバー上の設定が完了し、ratholeが新しい設定で
 
 echo "🏠 自宅サーバー側で rathole クライアントを起動します..."
 
-sudo systemctl restart ${SYSTEMD_SERVICE_CLIENT}
+sudo systemctl restart "${SYSTEMD_SERVICE_CLIENT}"
